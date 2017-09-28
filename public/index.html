@@ -1,29 +1,98 @@
 <html>
-    <head>
-        <script src="https://unpkg.com/vue"></script>
-    </head>
-    <body>
-        <div id="app">
-  {{ message }}
-        </div>
-    <script>
-    
+<head>
+    <title>Simple Web Monitor</title>
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
+    <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="//unpkg.com/vue-material/dist/vue-material.css"/>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/vue-chartjs/dist/vue-chartjs.full.min.js"></script>
+    <script src="http://momentjs.com/downloads/moment.min.js"></script>
+    <script src="https://unpkg.com/vue-material"></script>
+</head>
+
+<body>
+<div id="app">
+    <md-progress md-indeterminate v-if="isLoading" style="margin-top:30%;"></md-progress>
+
+
+    <div id="content" v-if="!isLoading" style="margin: 100px">
+
+        <md-button class="md-icon-button md-raised md-primary">
+            <md-icon>add</md-icon>
+        </md-button>
+        <md-table>
+            <md-table-header>
+                <md-table-row>
+                    <md-table-head style="min-width: 200px">
+                        URL
+                    </md-table-head>
+                    <md-table-head>Frequency</md-table-head>
+                    <md-table-head>Status Code</md-table-head>
+                    <md-table-head>Latency</md-table-head>
+                    <md-table-head>Last Checked</md-table-head>
+                </md-table-row>
+            </md-table-header>
+
+            <md-table-body>
+
+                <md-table-row v-for="(job, key) in jobs" :key="key">
+                    <md-table-cell>
+                        <md-button class="md-fab md-mini md-fab-right">
+                            <md-icon>edit</md-icon>
+                        </md-button>
+                        {{ job.url }}
+                    </md-table-cell>
+                    <md-table-cell>{{ job.frequency}} seconds</md-table-cell>
+                    <md-table-cell>{{ job.status_code}}</md-table-cell>
+                    <md-table-cell>{{ job.response_time}} ms</md-table-cell>
+                    <md-table-cell>{{ job.last_checked}}</md-table-cell>
+                </md-table-row>
+            </md-table-body>
+        </md-table>
+    </div>
+
+</div>
+<script>
+    Vue.use(VueMaterial)
+    Vue.material.registerTheme({
+        default: {
+            primary: 'blue',
+            accent: 'red'
+        },
+        green: {
+            primary: 'green',
+            accent: 'pink'
+        },
+        orange: {
+            primary: 'orange',
+            accent: 'green'
+        },
+    })
     var app = new Vue({
         el: '#app',
         data: {
-            message: 'Hello Vue!'
+            jobs: [],
+            jobsState: {},
+            isLoading: true,
         },
-
-        created: function() {
-                var self = this;
-                this.ws = new WebSocket('ws://' + window.location.host + '/ws');
-                this.ws.addEventListener('message', function(e) {
-                    var msg = JSON.parse(e.data);
-                    console.log(msg)
-                    self.message = msg
-                });
+        created: function () {
+            var self = this;
+            this.ws = new WebSocket('ws://' + window.location.host + '/ws');
+            this.ws.addEventListener('message', function (e) {
+                self.isLoading = false
+                var msg = JSON.parse(e.data);
+                var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+                d.setUTCSeconds(msg.last_checked);
+                msg.last_checked = moment(d).format('LTS')
+                msg.response_time = msg.response_time.toFixed(2)
+                self.jobsState[msg.url] = msg
+                self.jobs = []
+                for (key in self.jobsState) {
+                    self.jobs.push(self.jobsState[key])
+                }
+            });
         },
     })
-    </script>
-    </body>
+</script>
+</body>
 </html>

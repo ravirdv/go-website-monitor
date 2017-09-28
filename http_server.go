@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
 // holds connection
@@ -17,9 +16,9 @@ var broadcast = make(chan Job)
 // Configure the upgrader
 var upgrader = websocket.Upgrader{}
 
+// this handles websocket connection
 func handleConnections(w http.ResponseWriter, r *http.Request) {
-	log.Printf("We got a new connection %v", r)
-
+	log.Printf("We got a new websocket connection from %s\n", r.Header.Get("Origin"))
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -63,6 +62,9 @@ func StartServer() {
 	go handleMessages()
 	// setup ws route
 	http.HandleFunc("/ws", handleConnections)
+	// setup our REST endpoints
+	http.HandleFunc("/monitor/job", handleJob)
+
 	log.Printf("Started HTTP Interface on port %d\n", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
@@ -83,5 +85,26 @@ func handleMessages() {
 				delete(clients, client)
 			}
 		}
+	}
+}
+
+func handleJob(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitor/job" {
+		http.NotFound(w, r)
+		return
+	}
+
+	switch r.Method {
+	case "GET":
+		// Serve the resource.
+
+	case "POST":
+		// Create a new record.
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
 	}
 }
