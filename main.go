@@ -28,7 +28,7 @@ func main() {
 	}
 
 	// read result here.
-
+	go StartServer()
 	// let's wait for response
 	listenForShutdown()
 }
@@ -59,6 +59,7 @@ func Monitor(job Job, results chan<- string) {
 				}
 			}
 			log.Printf("%.2f ms elapsed, statusCode:%d, Response length: %d %s\n", secs, resp.StatusCode, len(body), job.URL)
+			broadcast <- job
 		} else {
 			log.Fatal(err)
 		}
