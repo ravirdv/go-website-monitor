@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -14,9 +13,6 @@ func ReadConfig() Jobs {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-
-	log.Printf("%s", raw)
-
 	var c Config
 	json.Unmarshal(raw, &c)
 	return c.JobsTest
