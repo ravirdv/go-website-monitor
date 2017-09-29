@@ -9,35 +9,28 @@ import (
 	"os"
 )
 
-func ReadConfig() Jobs {
+// reads config file and returns list of sites
+func ReadConfig() Config {
 	raw, err := ioutil.ReadFile("./config.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	var c Config
-	json.Unmarshal(raw, &c)
-	log.Printf("Read configuration, found %d jobs\n", len(c.SiteList))
+	var config Config
+	json.Unmarshal(raw, &config)
+	log.Printf("Read configuration, found %d jobs\n", len(config.SiteList))
 
-	return c.SiteList
+	return config
 }
 
-func WriteConfig(jobs Config) {
-	data, _ := json.Marshal(jobs)
-
-	err := ioutil.WriteFile("./config2.json", data, 0644)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
+// setup our log file & stdout
 func LogSetupAndDestruct() func() {
+	// create file
 	logFile, err := os.OpenFile("monitor.log", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
 		log.Panicln(err)
 	}
-
+	// set logger output
 	log.SetOutput(io.MultiWriter(os.Stderr, logFile))
 
 	return func() {

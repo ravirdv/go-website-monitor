@@ -1,15 +1,15 @@
 {
-    "request_timeout" : 5,
     "site_list" : [
         {
-          "url" : "http://www.ravi.ws",
+          "url" : "http://yahoo.com/",
           "check_text" : null,
-          "frequency" : 60
+          "frequency" : 10
         },
         {
-          "url" : "https://www.google.com",
+          "url" : "http://google.com/",
           "check_text" : "Lucky",
-          "frequency" : 120
-        }        
+          "frequency" : 10
+        }
+
     ]
 }

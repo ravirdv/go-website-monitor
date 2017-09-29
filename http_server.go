@@ -10,9 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"net/url"
 )
 
-// holds connection
+// holds websocket connections
 var clients = make(map[*websocket.Conn]bool)
 
 // allows us to broad message on ws to all connected clients
@@ -72,6 +73,8 @@ func StartServer() {
 	// setup our REST endpoints
 	http.HandleFunc("/monitor/job/add", handleAddJob)
 	http.HandleFunc("/monitor/job/remove", handleDeleteJob)
+	http.HandleFunc("/monitor/job/list", handleJobList)
+
 	http.Handle("/", routes)
 
 	log.Printf("Started HTTP Interface on port %d\n", port)
@@ -97,15 +100,33 @@ func handleMessages() {
 	}
 }
 
+func handleJobList(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		jsonString, _ := json.Marshal(monitoringJobs)
+		w.Write(jsonString)
+	}
+}
+
+// handles post request for adding new monitoring job
 func handleAddJob(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+		// read request content
 		body, _ := ioutil.ReadAll(r.Body)
 		var reqJob Job
-
+		// try to parse json
 		err := json.Unmarshal(body, &reqJob)
 		if err != nil {
 			http.Error(w, "Bad Request: Failed to parse JSON", http.StatusBadRequest)
+			return
 		}
+		// check if is valid
+		_, err = url.ParseRequestURI(reqJob.URL)
+		if err != nil {
+			log.Print("WARN: handleAddJob: invalid uri : ", reqJob.URL)
+			http.Error(w, "Bad Request: Invalid URI", http.StatusBadRequest)
+			return
+		}
+
 		// Create a new record.
 		if _, ok := monitoringJobs[reqJob.URL]; !ok {
 			go Monitor(reqJob)
@@ -121,16 +142,25 @@ func handleAddJob(w http.ResponseWriter, r *http.Request) {
 
 func handleDeleteJob(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+		// read requst content
 		body, _ := ioutil.ReadAll(r.Body)
 		var reqJob Job
-
+		// try to parse json
 		err := json.Unmarshal(body, &reqJob)
 		if err != nil {
 			http.Error(w, "Bad Request: Failed to parse JSON", http.StatusBadRequest)
+			return
 		}
-		// delete record.
-		delete(monitoringJobs, reqJob.URL)
+		// mark this job for shutdown
+		if _, ok := monitoringJobs[reqJob.URL]; ok {
+			temp := monitoringJobs[reqJob.URL]
+			temp.ShutDownRequest = true
+			monitoringJobs[reqJob.URL] = temp
+		} else {
+			http.Error(w, "Bad Request: Job Not found", http.StatusNotFound)
+		}
 	} else {
 		http.Error(w, "Bad Request:  Method not allowed", http.StatusBadRequest)
+		return
 	}
 }

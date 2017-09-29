@@ -9,11 +9,13 @@
 
     `go run *.go`
 
+## Usage
+ * Add Host
+    - `curl -H "Content-Type: application/json" -X POST -d '{"url":"http://ravi.ws/test", "frequency" : 15 }' http://localhost:8000/monitor/job/add`
+ * Delete Host
+    - `curl -H "Content-Type: application/json" -X POST -d '{"url":"http://ravi.ws/test", "frequency" : 15 }' http://localhost:8000/monitor/job/remove`
 
 ## TODO:
 - Distributed agents for monitoring via multiple locations
 - Authentication & User Profiles
 - More response verification conditions.
-
-## Distributed Setup
- - 

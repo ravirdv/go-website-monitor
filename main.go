@@ -1,25 +1,22 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-)
+import "log"
+
+var config Config
 
 func main() {
 	// setup logging
 	defer LogSetupAndDestruct()()
 
 	// let's read config file
-	jobs := ReadConfig()
+	config = ReadConfig()
 
-	if Initialize(jobs) != true {
+	if Initialize(config.SiteList) != true {
 		log.Fatal("Failed to initailze app, invalid configuration.")
 	}
 
 	// let's start few workers, ideally this should be set via config.
+	// TODO: frequency is managed by worker itself, instead it should be managed by schedular
 	for _, job := range monitoringJobs {
 		log.Println("Starting monitor for url : ", job.URL)
 		// we'll start a goroutine with id and channels
@@ -27,19 +24,5 @@ func main() {
 	}
 
 	// read result here.
-	go StartServer()
-	// let's wait for response
-	listenForShutdown()
-}
-
-func listenForShutdown() {
-	var gracefulStop = make(chan os.Signal)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-	log.Println("Application Started: Press Ctrl + C to exit.")
-	sig := <-gracefulStop
-	fmt.Printf("caught sig: %+v", sig)
-	fmt.Println("Waiting for workers to shutdown")
-	//time.Sleep( 2 * time.Second)
-	os.Exit(0)
+	StartServer()
 }

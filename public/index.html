@@ -51,7 +51,8 @@
                     <md-table-cell>{{ job.last_checked}}</md-table-cell>
                     <md-table-cell>
                         {{ job.result.type}}
-                        <md-tooltip md-direction="bottom" v-if="job.result.type === 'Error'">{{ job.result.details}}</md-tooltip>
+                        <md-tooltip md-direction="bottom" v-if="job.result.type === 'Error'">{{ job.result.details}}
+                        </md-tooltip>
                     </md-table-cell>
                 </md-table-row>
             </md-table-body>
@@ -85,17 +86,32 @@
             jobsState: {},
             isLoading: true,
         },
-        methods:{
-            deleteJob: function(url) {
-            delete this.jobsState[key]
-            this.$http.post("/monitor/job/remove", {
-                  url : url,
-                  frequency : 0
-              })
+        methods: {
+            deleteJob: function (url) {
+                delete this.jobsState[key]
+                this.$http.post("/monitor/job/remove", {
+                    url: url,
+                    frequency: 0
+                })
+                self.jobs = []
+                for (key in self.jobsState) {
+                    self.jobs.push(self.jobsState[key])
+                }
             },
         },
         created: function () {
             var self = this;
+
+            this.$http.get("/monitor/job/list").then(function(data){
+                self.isLoading = false
+                self.jobs = []
+                for (key in data.body) {
+                    if (!data.body[key].shutdown_requested){
+                        self.jobs.push(data.body[key])
+                    }
+                }
+            });
+
             this.ws = new WebSocket('ws://' + window.location.host + '/ws');
             this.ws.addEventListener('message', function (e) {
                 self.isLoading = false
@@ -107,7 +123,9 @@
                 self.jobsState[msg.url] = msg
                 self.jobs = []
                 for (key in self.jobsState) {
+                    if (!self.jobsState[key].shutdown_requested){
                     self.jobs.push(self.jobsState[key])
+                    }
                 }
             });
         },
