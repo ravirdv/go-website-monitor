@@ -9,18 +9,21 @@ import (
 )
 
 func main() {
+	// setup logging
+	defer LogSetupAndDestruct()()
+
 	// let's read config file
 	jobs := ReadConfig()
-	log.Printf("Read configuration, found %d jobs\n", len(jobs))
 
-	// workers will post back results on this channel
-	resultChannel := make(chan string, 100)
+	if Initialize(jobs) != true {
+		log.Fatal("Failed to initailze app, invalid configuration.")
+	}
 
 	// let's start few workers, ideally this should be set via config.
-	for _, job := range jobs {
+	for _, job := range monitoringJobs {
 		log.Println("Starting monitor for url : ", job.URL)
 		// we'll start a goroutine with id and channels
-		go Monitor(job, resultChannel)
+		go Monitor(job)
 	}
 
 	// read result here.

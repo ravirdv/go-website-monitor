@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
+	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 // holds connection
@@ -62,13 +65,13 @@ func StartServer() {
 	routes := mux.NewRouter()
 	routes.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 
-	//port := 8080
 	// send message from broadcast channel to all connected clients
 	go handleMessages()
 	// setup ws route
 	http.HandleFunc("/ws", handleConnections)
 	// setup our REST endpoints
-	http.HandleFunc("/monitor/job", handleJob)
+	http.HandleFunc("/monitor/job/add", handleAddJob)
+	http.HandleFunc("/monitor/job/remove", handleDeleteJob)
 	http.Handle("/", routes)
 
 	log.Printf("Started HTTP Interface on port %d\n", port)
@@ -94,23 +97,40 @@ func handleMessages() {
 	}
 }
 
-func handleJob(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/monitor/job" {
-		http.NotFound(w, r)
-		return
-	}
+func handleAddJob(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		body, _ := ioutil.ReadAll(r.Body)
+		var reqJob Job
 
-	switch r.Method {
-	case "GET":
-		// Serve the resource.
-
-	case "POST":
+		err := json.Unmarshal(body, &reqJob)
+		if err != nil {
+			http.Error(w, "Bad Request: Failed to parse JSON", http.StatusBadRequest)
+		}
 		// Create a new record.
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
+		if _, ok := monitoringJobs[reqJob.URL]; !ok {
+			go Monitor(reqJob)
+		}
+		monitoringJobs[reqJob.URL] = reqJob
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+
+	} else {
+		http.Error(w, "Bad Request: Method not allowed", http.StatusBadRequest)
+	}
+}
+
+func handleDeleteJob(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		body, _ := ioutil.ReadAll(r.Body)
+		var reqJob Job
+
+		err := json.Unmarshal(body, &reqJob)
+		if err != nil {
+			http.Error(w, "Bad Request: Failed to parse JSON", http.StatusBadRequest)
+		}
+		// delete record.
+		delete(monitoringJobs, reqJob.URL)
+	} else {
+		http.Error(w, "Bad Request:  Method not allowed", http.StatusBadRequest)
 	}
 }
