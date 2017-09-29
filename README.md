@@ -7,10 +7,10 @@
 
 ## Installation
 
-    - go run *.go
+    `go run *.go`
 
 
 ## TODO:
-- Distributed monitoring
+- Distributed agents for monitoring via multiple locations
 - Authentication & User Profiles
 - More response verification conditions.

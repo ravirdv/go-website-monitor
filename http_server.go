@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -54,16 +56,20 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartServer() {
-	port := 8000
-	// Create a simple file server
-	fs := http.FileServer(http.Dir("./public"))
-	http.Handle("/", fs)
+	//var port = flag.Int("port", 8080, "Specify port for HTTP Interface, default : 8080")
+	flag.Parse()
+	port := 8080
+	routes := mux.NewRouter()
+	routes.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
+
+	//port := 8080
 	// send message from broadcast channel to all connected clients
 	go handleMessages()
 	// setup ws route
 	http.HandleFunc("/ws", handleConnections)
 	// setup our REST endpoints
 	http.HandleFunc("/monitor/job", handleJob)
+	http.Handle("/", routes)
 
 	log.Printf("Started HTTP Interface on port %d\n", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
