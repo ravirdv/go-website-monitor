@@ -1,14 +1,13 @@
 {
-    "site_list" : [
-        {
-          "url" : "http://yahoo.com/",
-          "check_text" : null,
-          "frequency" : 10
+    "site_list": [{
+            "url": "https://news.ycombinator.com/",
+            "check_text": "",
+            "frequency": 10
         },
         {
-          "url" : "http://google.com/",
-          "check_text" : "Lucky",
-          "frequency" : 10
+            "url": "http://google.com/",
+            "check_text": "",
+            "frequency": 10
         }
 
     ]
